@@ -1,0 +1,362 @@
+import mysql.connector
+
+
+def conectar():
+    try:
+        conexao = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="191221",
+            database="expotech3"
+        )
+        print(" ✅ Conectado ao MySQL com sucesso!")
+        return conexao
+    except Exception as e:
+        print(" ❌ Erro ao conectar no MySQL:", e)
+        return None
+
+
+def adicionar_jogador(conexao):
+    cursor = conexao.cursor()
+
+    print("--- CADASTRAR JOGADOR EM FECAF UNIT F.C ---")
+    nome_jogador = input("Nome: ")
+    dt_nasc_jogador = input("Data de nascimento (AAAA-MM-DD): ")
+
+    print("Posição:")
+    print("[1] ATA")
+    print("[2] MEI")
+    print("[3] DEF")
+    print("[4] GOL")
+
+    posicao = input("Escolha a posição: ")
+
+    if posicao == "1":
+        fk_id_posicao = 1
+    elif posicao == "2":
+        fk_id_posicao = 2
+    elif posicao == "3":
+        fk_id_posicao = 3
+    elif posicao == "4":
+        fk_id_posicao = 4
+    else:
+        print("❌ Posição inválida")
+        return
+
+    salario_jogador = input("Salário (ex: 2500.50): ")
+
+    print("Clube:")
+    print("[1] Masculino")
+    print("[2] Feminino")
+    print("[3] Deficiente")
+
+    clube = input("⚽ Escolha o clube: ")
+
+    if clube == "1":
+        fk_id_clube = 1
+    elif clube == "2":
+        fk_id_clube = 2
+    elif clube == "3":
+        fk_id_clube = 3
+    else:
+        print("❌ Clube inválido")
+        return
+
+    cursor.execute(
+        "INSERT INTO tbl_jogadores (nome_jogador, dt_nasc_jogador, salario_jogador, fk_id_posicao, fk_id_clube) "
+        "VALUES (%s, %s, %s, %s, %s)",
+        (nome_jogador, dt_nasc_jogador, salario_jogador, fk_id_posicao, fk_id_clube)
+    )
+    conexao.commit()
+    print("✅ Jogador cadastrado com sucesso!")
+
+
+def listar_jogadores(conexao):
+    cursor = conexao.cursor()
+    print("--- LISTA DE JOGADORES ---")
+
+    cursor.execute("""
+        SELECT 
+            id_jogador,
+            nome_jogador,
+            dt_nasc_jogador,
+            salario_jogador,
+            nome_posicao,
+            nome_clube
+        FROM tbl_jogadores 
+        LEFT JOIN tbl_posicoes  ON id_posicao = fk_id_posicao
+        LEFT JOIN tbl_clubes  ON id_clube = fk_id_clube
+        ORDER BY id_jogador;
+    """)
+
+    dados = cursor.fetchall()
+
+    if len(dados) == 0:
+        print("❌ Nenhum jogador cadastrado ainda.")
+    else:
+        for j in dados:
+            print(f"ID: {j[0]}")
+            print(f"Nome: {j[1]}")
+            print(f"Data de nascimento: {j[2]}")
+            print(f"Salário: R$ {j[3]}")
+            print(f"Posição: {j[4]}")
+            print(f"Clube: {j[5]}")
+            print("-" * 30)
+
+
+def atualizar_jogador(conexao):
+    cursor = conexao.cursor()
+
+    print("--- ATUALIZAR JOGADOR ---")
+    listar_jogadores(conexao)
+
+    id_jog = input("Digite o ID do jogador que deseja atualizar: ")
+
+    cursor.execute("SELECT * FROM tbl_jogadores WHERE id_jogador = %s", (id_jog,))
+    resultado = cursor.fetchone()
+
+    if not resultado:
+        print("❌ ID inexistente.")
+        return
+
+    print("O que você quer atualizar?")
+    print("1 - Nome")
+    print("2 - Data de nascimento")
+    print("3 - Salário")
+    print("4 - Posição")
+    print("5 - Clube (masculino/feminino/deficiente)")
+
+    opc = input("Escolha: ")
+
+    if opc == "1":
+        novo_nome = input("Novo nome: ")
+        cursor.execute("UPDATE tbl_jogadores SET nome_jogador = %s WHERE id_jogador = %s",
+                       (novo_nome, id_jog))
+
+    elif opc == "2":
+        nova_data = input("Nova data (AAAA-MM-DD): ")
+        cursor.execute("UPDATE tbl_jogadores SET dt_nasc_jogador = %s WHERE id_jogador = %s",
+                       (nova_data, id_jog))
+
+    elif opc == "3":
+        novo_sal = input("Novo salário: ")
+        cursor.execute("UPDATE tbl_jogadores SET salario_jogador = %s WHERE id_jogador = %s",
+                       (novo_sal, id_jog))
+
+    elif opc == "4":
+        print("Posição:")
+        print("[1] ATA")
+        print("[2] MEI")
+        print("[3] DEF")
+        print("[4] GOL")
+
+        posicao = input("Escolha a posição: ")
+
+        if posicao == "1":
+            id_pos = 1
+        elif posicao == "2":
+            id_pos = 2
+        elif posicao == "3":
+            id_pos = 3
+        elif posicao == "4":
+            id_pos = 4
+        else:
+            print("❌ Posição inválida")
+            return
+
+        cursor.execute("UPDATE tbl_jogadores SET fk_id_posicao = %s WHERE id_jogador = %s",
+                       (id_pos, id_jog))
+
+    elif opc == "5":
+        novo_clube = input("Clube ([1] Masculino / [2] Feminino / [3] Deficiente): ")
+
+        if novo_clube == "1":
+            id_clube = 1
+        elif novo_clube == "2":
+            id_clube = 2
+        elif novo_clube == "3":
+            id_clube = 3
+        else:
+            print("❌ Clube inválido")
+            return
+
+        cursor.execute("UPDATE tbl_jogadores SET fk_id_clube = %s WHERE id_jogador = %s",
+                       (id_clube, id_jog))
+
+    else:
+        print("❌ Opção inválida.")
+
+    conexao.commit()
+    print("✅ Jogador atualizado com sucesso!")
+
+
+def deletar_jogador(conexao):
+    cursor = conexao.cursor()
+    listar_jogadores(conexao)
+
+    id_del = input("Digite o ID do jogador que deseja apagar: ")
+    cursor.execute("DELETE FROM tbl_jogadores WHERE id_jogador = %s", (id_del,))
+    conexao.commit()
+
+    print("✅ Jogador removido com sucesso!")
+
+
+def adicionar_tecnico(conexao):
+    cursor = conexao.cursor()
+
+    print("--- CADASTRAR TÉCNICO ---")
+    nome_tec = input("Nome: ")
+    dt_nasc_tec = input("Data de nascimento (AAAA-MM-DD): ")
+    salario_tec = input("Salário: ")
+    fk_id_clube = input("Clube ([1] Masculino / [2] Feminino / [3] Deficiente): ")
+
+    if fk_id_clube == "1":
+        fk_id_clube = 1
+    elif fk_id_clube == "2":
+        fk_id_clube = 2
+    elif fk_id_clube == "3":
+        fk_id_clube = 3
+    else:
+        print("❌ Clube inválido")
+        return
+
+    cursor.execute(
+        "INSERT INTO tbl_tec (nome_tec, dt_nasc_tec, salario_tec, fk_id_clube) "
+        "VALUES (%s, %s, %s, %s)",
+        (nome_tec, dt_nasc_tec, salario_tec, fk_id_clube)
+    )
+
+    conexao.commit()
+    print("✅ Técnico cadastrado com sucesso!")
+
+
+def listar_tecnicos(conexao):
+    cursor = conexao.cursor()
+    print("--- LISTA DE TÉCNICOS ---")
+
+    cursor.execute("""
+        SELECT id_tec, nome_tec, dt_nasc_tec, salario_tec, c.nome_clube
+        FROM tbl_tec t
+        LEFT JOIN tbl_clubes c ON c.id_clube = t.fk_id_clube
+        ORDER BY id_tec
+    """)
+
+    dados = cursor.fetchall()
+
+    if len(dados) == 0:
+        print("❌ Nenhum técnico cadastrado.")
+    else:
+        for t in dados:
+            print(f"ID: {t[0]}")
+            print(f"Nome: {t[1]}")
+            print(f"Nascimento: {t[2]}")
+            print(f"Salário: R$ {t[3]}")
+            print(f"Clube: {t[4]}")
+            print("-" * 30)
+
+
+def atualizar_tecnico(conexao):
+    cursor = conexao.cursor()
+
+    print("--- ATUALIZAR TÉCNICO ---")
+    listar_tecnicos(conexao)
+
+    id_tec = input("Digite o ID do técnico que deseja atualizar: ")
+
+    cursor.execute("SELECT * FROM tbl_tec WHERE id_tec = %s", (id_tec,))
+    resultado = cursor.fetchone()
+
+    if not resultado:
+        print("❌ ID inexistente.")
+        return
+
+    print("O que deseja atualizar?")
+    print("1 - Nome")
+    print("2 - Data de nascimento")
+    print("3 - Salário")
+
+    opc = input("Escolha: ")
+
+    if opc == "1":
+        novo_nome = input("Novo nome: ")
+        cursor.execute("UPDATE tbl_tec SET nome_tec = %s WHERE id_tec = %s",
+                       (novo_nome, id_tec))
+
+    elif opc == "2":
+        nova_data = input("Nova data (AAAA-MM-DD): ")
+        cursor.execute("UPDATE tbl_tec SET dt_nasc_tec = %s WHERE id_tec = %s",
+                       (nova_data, id_tec))
+
+    elif opc == "3":
+        novo_sal = input("Novo salário: ")
+        cursor.execute("UPDATE tbl_tec SET salario_tec = %s WHERE id_tec = %s",
+                       (novo_sal, id_tec))
+
+    else:
+        print("😵‍ Opção inválida.")
+
+    conexao.commit()
+    print("✅ Técnico atualizado com sucesso!")
+
+
+def deletar_tecnico(conexao):
+    cursor = conexao.cursor()
+    listar_tecnicos(conexao)
+
+    id_del = input("Digite o ID do técnico que deseja apagar: ")
+    cursor.execute("DELETE FROM tbl_tec WHERE id_tec = %s", (id_del,))
+    conexao.commit()
+
+    print("✅ Técnico removido com sucesso!")
+
+
+if __name__ == '__main__':
+    conexao = conectar()
+
+    if conexao is None:
+        exit(1)
+
+    while True:
+        print("--- MENU PRINCIPAL ---")
+        print("⚽ 1 - Adicionar jogador.")
+        print("📝 2 - Listar jogadores.")
+        print("➕ 3 - Atualizar jogador.")
+        print("⚽ 4 - Adicionar técnico.")
+        print("📝 5 - Listar técnicos.")
+        print("➕ 6 - Atualizar técnico.")
+        print("🚩 7 - Deletar jogador.")
+        print("🚩 8 - Deletar técnico.")
+        print("❌ 9 - Sair.")
+
+        opcao = input("Escolha: ")
+
+        if opcao == "1":
+            adicionar_jogador(conexao)
+
+        elif opcao == "2":
+            listar_jogadores(conexao)
+
+        elif opcao == "3":
+            atualizar_jogador(conexao)
+
+        elif opcao == "4":
+            adicionar_tecnico(conexao)
+
+        elif opcao == "5":
+            listar_tecnicos(conexao)
+
+        elif opcao == "6":
+            atualizar_tecnico(conexao)
+
+        elif opcao == "7":
+            deletar_jogador(conexao)
+
+        elif opcao == "8":
+            deletar_tecnico(conexao)
+
+        elif opcao == "9":
+            print("🔥 Tarefa Encerrada.")
+            break
+
+        else:
+            print("😵‍ Opção inválida.")
