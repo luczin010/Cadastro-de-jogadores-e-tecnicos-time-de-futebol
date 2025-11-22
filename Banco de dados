@@ -1,0 +1,44 @@
+CREATE DATABASE expotech3;
+USE expotech3;
+
+CREATE TABLE tbl_jogadores(
+    id_jogador INT AUTO_INCREMENT PRIMARY KEY,
+    nome_jogador VARCHAR(100),
+    dt_nasc_jogador DATE,
+    salario_jogador DECIMAL(10,2),
+    fk_id_posicao INT,
+    fk_id_clube INT
+);
+
+CREATE TABLE tbl_tec(
+    id_tec INT AUTO_INCREMENT PRIMARY KEY,
+    nome_tec VARCHAR(100),
+    dt_nasc_tec DATE,
+    salario_tec DECIMAL(10,2),
+    fk_id_clube INT
+);
+
+CREATE TABLE tbl_clubes(
+    id_clube INT AUTO_INCREMENT PRIMARY KEY,
+    nome_clube VARCHAR(100)
+);
+
+CREATE TABLE tbl_posicoes(
+    id_posicao INT AUTO_INCREMENT PRIMARY KEY,
+    nome_posicao VARCHAR(100)
+);
+
+ALTER TABLE tbl_jogadores 
+ADD CONSTRAINT fk_jog_posicao FOREIGN KEY (fk_id_posicao) REFERENCES tbl_posicoes(id_posicao);
+
+ALTER TABLE tbl_jogadores 
+ADD CONSTRAINT fk_jog_clube FOREIGN KEY (fk_id_clube) REFERENCES tbl_clubes(id_clube);
+
+ALTER TABLE tbl_tec 
+ADD CONSTRAINT fk_tec_clube FOREIGN KEY (fk_id_clube) REFERENCES tbl_clubes(id_clube);
+
+INSERT INTO tbl_clubes (nome_clube)
+VALUES ('Masculino'), ('Feminino'), ('Deficiente');
+
+INSERT INTO tbl_posicoes (nome_posicao)
+VALUES ('ATA'),('MEI'),('DEF'),('GOL');
